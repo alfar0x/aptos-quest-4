@@ -19,4 +19,4 @@ Script will make aptos quest 4 transactions:
 
 Discover more scripts on our [Telegram channel](https://t.me/+FozX3VZA0RIyNWY6)
 
-Підписуйтесь на [тг канал](https://t.me/+FozX3VZA0RIyNWY6)
+Виносимо проекти в [телеграм каналі](https://t.me/+FozX3VZA0RIyNWY6)
