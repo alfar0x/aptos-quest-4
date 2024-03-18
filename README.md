@@ -17,6 +17,8 @@ Script will make aptos quest 4 transactions:
 1. Fill `src/config.js` file
 1. Run `npm run start`
 
+Thanks [humansimulacrum](https://github.com/humansimulacrum/aptos-simulator) for code examples
+
 Discover more scripts on our [Telegram channel](https://t.me/+FozX3VZA0RIyNWY6)
 
-Виносимо проекти в [телеграм каналі](https://t.me/+FozX3VZA0RIyNWY6)
+Виносимо проекти в [телеграм каналі 🇺🇦](https://t.me/+FozX3VZA0RIyNWY6)
