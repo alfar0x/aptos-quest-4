@@ -1,6 +1,5 @@
 // eslint-disable-next-line no-unused-vars
 import { AptosAccount } from "aptos";
-import { randomInt } from "@alfar/helpers";
 import Big from "big.js";
 import {
   swapAptToUsdc,
@@ -9,14 +8,7 @@ import {
   createLock,
   vote,
 } from "./actions.js";
-import {
-  getTokenBalance,
-  logger,
-  readableToNormalized,
-  normalizedToReadable,
-  wait,
-  readableToUsd,
-} from "./common.js";
+import { wait, randomInt } from "./common.js";
 import {
   MIN_USDC_TO_SUPPLY,
   MAX_USDC_TO_SUPPLY,
@@ -30,10 +22,17 @@ import {
   MAX_CELL_TO_LOCK,
 } from "./config.js";
 import tokens from "./tokens.js";
+import logger from "./logger.js";
+import {
+  getTokenBalance,
+  readableToNormalized,
+  normalizedToReadable,
+  readableToUsd,
+} from "./helpers.js";
 
 const worker = async (/** @type {AptosAccount} */ account) => {
   const aptBalance = await getTokenBalance(account, tokens.apt);
-  const usdcBalance = await getTokenBalance(account, tokens.usdc);
+  let usdcBalance = await getTokenBalance(account, tokens.usdc);
 
   logger.info(
     `balances: ${aptBalance.readable} APT ($${aptBalance.usd}) | ${usdcBalance.readable} USDC`,
@@ -79,33 +78,33 @@ const worker = async (/** @type {AptosAccount} */ account) => {
 
     await wait(2);
 
-    const newUsdcBalance = await getTokenBalance(account, tokens.usdc);
+    usdcBalance = await getTokenBalance(account, tokens.usdc);
 
-    logger.info(`new USDC balance: ${newUsdcBalance.readable}`);
+    logger.info(`new USDC balance: ${usdcBalance.readable}`);
 
     await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
   }
 
   const usdcNormalizedAmountToSupply = randomInt(
     readableToNormalized(MIN_USDC_TO_SUPPLY, tokens.usdc.decimals),
-    readableToNormalized(MAX_USDC_TO_SUPPLY, tokens.usdc.decimals),
+    usdcBalance.normalized,
   );
 
-  // const { hash: lendHash } = await ariesLendUsdc(
-  //   account,
-  //   usdcNormalizedAmountToSupply,
-  // );
+  const { hash: lendHash } = await ariesLendUsdc(
+    account,
+    usdcNormalizedAmountToSupply,
+  );
 
-  // const usdcReadableAmountToSupply = normalizedToReadable(
-  //   usdcNormalizedAmountToSupply,
-  //   tokens.usdc.decimals,
-  // );
+  const usdcReadableAmountToSupply = normalizedToReadable(
+    usdcNormalizedAmountToSupply,
+    tokens.usdc.decimals,
+  );
 
-  // logger.info(
-  //   `supply ${usdcReadableAmountToSupply} USDC: ${EXPLORER_URL}/${lendHash}`,
-  // );
+  logger.info(
+    `supply ${usdcReadableAmountToSupply} USDC: ${EXPLORER_URL}/${lendHash}`,
+  );
 
-  // await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
+  await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
 
   const aptNormalizedAmountSwapToCell = randomInt(
     readableToNormalized(MIN_APT_TO_CELL_SWAP, tokens.apt.decimals),

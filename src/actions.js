@@ -1,11 +1,11 @@
 // eslint-disable-next-line no-unused-vars
 import { AptosAccount } from "aptos";
 import Big from "big.js";
-import { randomChoice, randomChoices, randomInt } from "@alfar/helpers";
 import { addHours, millisecondsToSeconds } from "date-fns";
 import client from "./client.js";
 import tokens from "./tokens.js";
-import { generateRandomIntegersWithSum } from "./common.js";
+import { randomChoice, randomChoices, randomInt } from "./common.js";
+import { generateRandomIntegersWithSum } from "./helpers.js";
 
 const submitTx = async (
   /** @type {AptosAccount} */ account,
@@ -135,7 +135,6 @@ export const vote = async (/** @type {any} */ account) => {
       "0xf7d4a97f8a82b1454cd69f92b5a5bd5bcad609e44a6cf56377755adcfca5863a",
     ],
     votesCount,
-    false,
   );
 
   const percents = generateRandomIntegersWithSum(votesCount, 100).map(String);

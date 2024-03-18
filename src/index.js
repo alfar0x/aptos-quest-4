@@ -1,23 +1,27 @@
 import "dotenv/config";
-import { readByLine } from "@alfar/helpers";
 import { AptosAccount, HexString } from "aptos";
-import { logger, updateTokenPrices, wait } from "./common.js";
+import Big from "big.js";
+import { createFiles, readByLine, wait } from "./common.js";
 import {
   UPDATE_TOKEN_PRICES_MS,
   MIN_ACC_SLEEP_SEC,
   MAX_ACC_SLEEP_SEC,
 } from "./config.js";
 import worker from "./worker.js";
-import Big from "big.js";
+import logger from "./logger.js";
+import { updateTokenPrices } from "./helpers.js";
 
 let lastPricesUpdateTime = 0;
 
+const FILE_PRIVATE_KEYS = "input/privateKeys.txt";
+
 const main = async () => {
-  const privateKeys = readByLine("input/privateKeys.txt").map((p) => p.trim());
+  createFiles([FILE_PRIVATE_KEYS]);
+  const privateKeys = readByLine(FILE_PRIVATE_KEYS).map((p) => p.trim());
 
   logger.info(`found ${privateKeys.length} private keys`);
 
-  // await wait(10);
+  await wait(10);
 
   let idx = 1;
 

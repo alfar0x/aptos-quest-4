@@ -1,39 +1,108 @@
-// eslint-disable-next-line no-unused-vars
-import { AptosAccount } from "aptos";
-import Big from "big.js";
-import { randomInt, sleep, initDefaultLogger, formatRel } from "@alfar/helpers";
-import tokens from "./tokens.js";
-import client from "./client.js";
+import path from "path";
+import fs from "fs";
+import logger from "./logger.js";
+import {
+  addSeconds,
+  differenceInMinutes,
+  formatDistanceToNowStrict,
+  formatRelative,
+} from "date-fns";
 
-export const logger = initDefaultLogger();
-
-export const updateTokenPrices = async () => {
-  logger.info(`updating token prices`);
-
-  const ids = Object.values(tokens).map((value) => value.geskoId);
-
-  const params = { ids, vs_currencies: "usd" };
-
-  // @ts-ignore
-  const urlParams = new URLSearchParams(params).toString();
-
-  const response = await fetch(
-    "https://api.coingecko.com/api/v3/simple/price?" + urlParams,
+export const replaceAll = (
+  /** @type {string} */ str,
+  /** @type {any[]} */ replacers,
+) => {
+  return replacers.reduce(
+    (s, { search, replace }) => s.replaceAll(search, replace),
+    str,
   );
+};
 
-  const data = await response.json();
+export const formatRel = (/** @type {number} */ sec) => {
+  const time = addSeconds(new Date(), sec);
 
-  for (const tokenKey of Object.keys(tokens)) {
-    if (data[tokens[tokenKey].geskoId].usd) {
-      tokens[tokenKey].price = data[tokens[tokenKey].geskoId].usd;
-    } else {
-      tokens[tokenKey].price = tokens[tokenKey].defaultPrice;
+  const relative = formatRelative(time, new Date());
 
-      logger.warn(
-        `token ${tokens[tokenKey].geskoId} default price set: ${tokens[tokenKey].defaultPrice}`,
-      );
+  const relFormatted =
+    differenceInMinutes(time, new Date()) > 24 * 60
+      ? relative
+      : replaceAll(relative, [
+          { search: "today at ", replace: "" },
+          { search: "tomorrow at ", replace: "" },
+        ]);
+
+  const distance = replaceAll(formatDistanceToNowStrict(time), [
+    { search: " seconds", replace: "s" },
+    { search: " minutes", replace: "m" },
+    { search: " hours", replace: "h" },
+    { search: " days", replace: "d" },
+    { search: " months", replace: "mth" },
+    { search: " years", replace: "y" },
+    { search: " second", replace: "s" },
+    { search: " minute", replace: "m" },
+    { search: " hour", replace: "h" },
+    { search: " day", replace: "d" },
+    { search: " month", replace: "mth" },
+    { search: " year", replace: "y" },
+  ]);
+
+  return `${relFormatted} (${distance})`;
+};
+
+export const readByLine = (name) =>
+  fs
+    .readFileSync(name, { encoding: "utf-8" })
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((i) => i.trim());
+
+export const randomChoice = (/** @type {any[]} */ array) =>
+  array[Math.floor(Math.random() * array.length)];
+
+export const shuffle = (/** @type {any[]} */ array) =>
+  [...array].sort(() => Math.random() - 0.5);
+
+export const randomChoices = (
+  /** @type {any[]} */ array,
+  /** @type {number} */ count,
+) => {
+  return shuffle(array).slice(0, count);
+};
+
+export const randomInt = (
+  /** @type {number} */ min,
+  /** @type {number} */ max,
+) => {
+  const roundedMin = Math.ceil(min);
+  const roundedMax = Math.floor(max);
+
+  return Math.floor(Math.random() * (roundedMax - roundedMin + 1)) + roundedMin;
+};
+
+export const createFiles = (/** @type {string[]} */ paths) => {
+  paths.forEach((filePath) => {
+    const absolutePath = path.resolve(filePath);
+
+    if (fs.existsSync(absolutePath)) return;
+
+    const isDirectory = path.extname(filePath) === "";
+
+    if (isDirectory) {
+      fs.mkdirSync(absolutePath, { recursive: true });
+      logger.info(`directory created: ${absolutePath}`);
+      return;
     }
-  }
+
+    const dirname = path.dirname(absolutePath);
+
+    if (!fs.existsSync(dirname)) {
+      fs.mkdirSync(dirname, { recursive: true });
+      logger.info(`directory created: ${dirname}`);
+    }
+
+    fs.writeFileSync(absolutePath, "", "utf-8");
+    logger.info(`file created: ${absolutePath}`);
+  });
 };
 
 export const wait = async (
@@ -44,70 +113,5 @@ export const wait = async (
   if (sec > 60) {
     logger.info(`sleeping until ${formatRel(sec)}`);
   }
-  await sleep(sec);
-};
-
-export const normalizedToReadable = (
-  /** @type {Big.BigSource} */ normalized,
-  /** @type {number} */ decimals,
-) => {
-  const divider = Big(10).pow(decimals);
-  return Big(normalized).div(divider).round(decimals).toNumber();
-};
-
-export const readableToNormalized = (
-  /** @type {Big.BigSource} */ readable,
-  /** @type {number} */ decimals,
-) => {
-  const multiplier = Big(10).pow(decimals);
-  return Big(readable).times(multiplier).round().toNumber();
-};
-
-export const readableToUsd = (
-  /** @type {Big.BigSource} */ readable,
-  /** @type {number} */ price,
-) => {
-  return Big(readable).times(price).round(2).toNumber();
-};
-
-export const getTokenBalance = async (
-  /** @type {AptosAccount} */ account,
-  /** @type {{address:string, decimals: number, price: number}} */ token,
-) => {
-  const { address, decimals } = token;
-
-  const fullAddress = "0x1::coin::CoinStore<" + address + ">";
-  const resources = await client.getAccountResources(account.address());
-  for (let i = 0; i < resources.length; i++) {
-    if (resources[i].type === fullAddress) {
-      // @ts-ignore
-      const normalized = resources[i].data.coin.value;
-      const readable = normalizedToReadable(normalized, decimals);
-      const usd = readableToUsd(readable, token.price);
-
-      return { normalized, readable, usd };
-    }
-  }
-  return { normalized: 0, readable: 0, usd: 0 };
-};
-
-export const generateRandomIntegersWithSum = (
-  /** @type {number} */ count,
-  /** @type {number} */ sum,
-) => {
-  if (count <= 0) throw new Error("count must be positive");
-  if (sum < 0) throw new Error("sum must be positive");
-
-  const result = [];
-  let innerSum = sum;
-
-  for (let i = 0; i < count - 1; i++) {
-    const rnd = Math.floor(Math.random() * (innerSum - 1)) + 1;
-    result.push(rnd);
-    innerSum -= rnd;
-  }
-
-  result.push(innerSum);
-
-  return result;
+  await new Promise((resolve) => setTimeout(resolve, Math.round(sec * 1000)));
 };
