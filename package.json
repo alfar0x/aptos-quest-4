@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "aptos": "^1.21.0",
+    "axios": "^1.6.8",
     "big.js": "^6.2.1",
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",

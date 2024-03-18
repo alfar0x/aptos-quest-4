@@ -15,7 +15,7 @@ It will:
 ## Setup
 1. Install [Node.js](https://nodejs.org/en/download)
 1. Create `.env` file and set values using example `.env.example`
-1. Fille `input/privateKeys.txt` with private keys
+1. Fill `input/privateKeys.txt` with private keys
 1. Fill `src/config.js` file
 1. Run `npm run start`
 
