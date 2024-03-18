@@ -21,4 +21,4 @@ It will:
 
 Discover more scripts on our [Telegram channel](https://t.me/+FozX3VZA0RIyNWY6)
 
-Телеграм канал[Telegram channel](https://t.me/+FozX3VZA0RIyNWY6)
+Підписуйтесь на [тг канал](https://t.me/+FozX3VZA0RIyNWY6)
