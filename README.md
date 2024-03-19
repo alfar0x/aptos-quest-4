@@ -3,7 +3,7 @@
 **Note:** This script is still in development. Use it with on your own risk!
 
 ## What the Script Does
-Script will make aptos quest 4 transactions:
+Script will make [aptos quest 4](https://galxe.com/aptos/campaign/GCm4Ct4fp8) transactions:
 1. Buy USDC if balance is 0
 1. Supply USDC on https://vibrantx.finance/?product=Leveraged
 1. Purchase CELL on https://app.cellana.finance/swap 
