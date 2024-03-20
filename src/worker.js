@@ -87,7 +87,7 @@ const worker = async (/** @type {AptosAccount} */ account) => {
 
   const usdcNormalizedAmountToSupply = randomInt(
     readableToNormalized(MIN_USDC_TO_SUPPLY, tokens.usdc.decimals),
-    usdcBalance.normalized,
+    readableToNormalized(MAX_USDC_TO_SUPPLY, tokens.usdc.decimals),
   );
 
   const { hash: lendHash } = await ariesLendUsdc(

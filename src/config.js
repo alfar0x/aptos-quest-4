@@ -1,8 +1,8 @@
-export const MIN_TX_SLEEP_SEC = 10;
-export const MAX_TX_SLEEP_SEC = 30;
+export const MIN_TX_SLEEP_SEC = 30;
+export const MAX_TX_SLEEP_SEC = 180;
 
-export const MIN_ACC_SLEEP_SEC = 10 * 60;
-export const MAX_ACC_SLEEP_SEC = 20 * 60;
+export const MIN_ACC_SLEEP_SEC = 4000;
+export const MAX_ACC_SLEEP_SEC = 8000;
 
 export const MIN_USDC_TO_SUPPLY = 0.01;
 export const MAX_USDC_TO_SUPPLY = 0.1;
