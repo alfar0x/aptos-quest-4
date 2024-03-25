@@ -25,7 +25,7 @@ const main = async () => {
 
   logger.info(`found ${privateKeys.length} private keys`);
 
-  await wait(10);
+  // await wait(10);
 
   let idx = 1;
 

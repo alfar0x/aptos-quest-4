@@ -69,7 +69,16 @@ const submitTx = async (
 
       const txResult = await client.waitForTransactionWithResult(txHash);
 
-      if (!txResult.success) throw new Error("Transaction failed");
+      if (!txResult.success) {
+        if (
+          txResult?.vm_status?.includes("ECANNOT_VOTE_TWICE_IN_THE_SAME_EPOCH")
+        ) {
+          logger.warn("already voted in this epoch");
+          return "";
+        }
+
+        throw new Error("Transaction failed");
+      }
 
       return txResult.hash;
     } catch (error) {
@@ -127,6 +136,7 @@ export const swapAptToCell = async (/** @type {AptosAccount} */ account) => {
 };
 
 export const createLock = async (/** @type {AptosAccount} */ account) => {
+  await wait(10);
   // const weeksAmount = randomChoice([2, 4, 24, 52, 104]);
   const weeksAmount = "2";
   const cellBalance = await getCellBalance(account);
