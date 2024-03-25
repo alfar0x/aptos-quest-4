@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { AptosAccount, HexString } from "aptos";
-import { createFiles, readByLine, wait } from "./helpers.js";
+import { appendFile, createFiles, readByLine, wait } from "./helpers.js";
 import {
   MIN_ACC_SLEEP_SEC,
   MAX_ACC_SLEEP_SEC,
@@ -18,9 +18,10 @@ import {
 import logger from "./logger.js";
 
 const FILE_PRIVATE_KEYS = "input/privateKeys.txt";
+const FILE_FAILED_KEYS = "input/failed.txt";
 
 const main = async () => {
-  createFiles([FILE_PRIVATE_KEYS]);
+  createFiles([FILE_PRIVATE_KEYS, FILE_FAILED_KEYS]);
   const privateKeys = readByLine(FILE_PRIVATE_KEYS).map((p) => p.trim());
 
   logger.info(`found ${privateKeys.length} private keys`);
@@ -56,6 +57,7 @@ const main = async () => {
       await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
     } catch (error) {
       logger.error(error.message);
+      appendFile(FILE_FAILED_KEYS, `${privateKey}\n`);
     }
 
     if (idx < privateKeys.length) {

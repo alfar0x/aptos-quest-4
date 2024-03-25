@@ -56,6 +56,9 @@ export const readByLine = (name) =>
     .filter(Boolean)
     .map((i) => i.trim());
 
+export const appendFile = (name, data) =>
+  fs.appendFileSync(name, data, { encoding: "utf-8" });
+
 export const randomChoice = (/** @type {any[]} */ array) =>
   array[Math.floor(Math.random() * array.length)];
 
