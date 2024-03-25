@@ -1,13 +1,13 @@
 import "dotenv/config";
 import { AptosAccount, HexString } from "aptos";
-import { appendFile, createFiles, readByLine, wait } from "./helpers.js";
 import {
-  MIN_ACC_SLEEP_SEC,
-  MAX_ACC_SLEEP_SEC,
-  EXPLORER_URL,
-  MIN_TX_SLEEP_SEC,
-  MAX_TX_SLEEP_SEC,
-} from "./config.js";
+  appendFile,
+  createFiles,
+  readByLine,
+  wait,
+  wrapper,
+} from "./helpers.js";
+import { MIN_ACC_SLEEP_SEC, MAX_ACC_SLEEP_SEC } from "./config.js";
 import {
   swapAptToUsdt,
   ariesLendUsdt,
@@ -35,25 +35,11 @@ const main = async () => {
     logger.info(`starting ${idx} account ${account.address().toString()}`);
 
     try {
-      const swapAptToUsdtHash = await swapAptToUsdt(account);
-      logger.info(`swap apt to usdt: ${EXPLORER_URL}/${swapAptToUsdtHash}`);
-      await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
-
-      const ariesLendUsdtHash = await ariesLendUsdt(account);
-      logger.info(`supply usdt: ${EXPLORER_URL}/${ariesLendUsdtHash}`);
-      await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
-
-      const swapAptToCellHash = await swapAptToCell(account);
-      logger.info(`swap apt to cell: ${EXPLORER_URL}/${swapAptToCellHash}`);
-      await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
-
-      const createLockHash = await createLock(account);
-      logger.info(`create lock: ${EXPLORER_URL}/${createLockHash}`);
-      await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
-
-      const voteHash = await vote(account);
-      if (voteHash) logger.info(`vote: ${EXPLORER_URL}/${voteHash}`);
-      await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
+      await wrapper("swap apt -> usdt", swapAptToUsdt, account);
+      await wrapper("supply usdt", ariesLendUsdt, account);
+      await wrapper("swap apt -> cell", swapAptToCell, account);
+      await wrapper("lock cell", createLock, account);
+      await wrapper("vote", vote, account, true);
     } catch (error) {
       logger.error(error.message);
       appendFile(FILE_FAILED_KEYS, `${privateKey}\n`);

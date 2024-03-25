@@ -7,6 +7,12 @@ import {
   formatDistanceToNowStrict,
   formatRelative,
 } from "date-fns";
+import {
+  EXPLORER_URL,
+  MAX_TX_SLEEP_SEC,
+  MIN_TX_SLEEP_SEC,
+  TIMES_TO_RETRY_TX,
+} from "./config.js";
 
 export const replaceAll = (
   /** @type {string} */ str,
@@ -138,4 +144,30 @@ export const generateRandomIntegersWithSum = (
   result.push(innerSum);
 
   return result;
+};
+
+export const wrapper = async (name, action, account, disableSleep) => {
+  let retries = TIMES_TO_RETRY_TX;
+
+  while (retries >= 1) {
+    try {
+      const hash = await action(account);
+      if (hash) {
+        if (hash?.startsWith("0x")) {
+          logger.info(`${name}: ${EXPLORER_URL}/${hash}`);
+        } else {
+          logger.info(`${name}: ${hash}`);
+        }
+      }
+      if (!disableSleep) await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
+      return;
+    } catch (error) {
+      logger.error(error.message);
+      await wait(10, 40);
+    }
+
+    retries -= 1;
+  }
+
+  throw new Error("retry attempts has been reached");
 };

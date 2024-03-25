@@ -1,31 +1,32 @@
-/* eslint-disable camelcase */
 // eslint-disable-next-line no-unused-vars
 import { AptosAccount, AptosClient, Provider } from "aptos";
 import {
   randomChoices,
   randomInt,
   generateRandomIntegersWithSum,
-  wait,
+  randomChoice,
 } from "./helpers.js";
-import { TIMES_TO_RETRY_TX } from "./config.js";
-import logger from "./logger.js";
 import Big from "big.js";
 
 const { RPC_URL } = process.env;
 
 const client = new AptosClient(RPC_URL);
+// @ts-ignore
 const provider = new Provider("mainnet");
 
 const MAX_CELL_TO_LOCK = 100000000;
 
 const getCellBalance = async (account) => {
   const coins = await provider.getAccountCoinsData(account.address());
+
   const coin = coins.current_fungible_asset_balances.find(
     (c) =>
       c.asset_type ===
       "0x2ebb2ccac5e027a87fa0e2e5f656a3a4238d6a48d93ec9b610d570fc0aa0df12",
   );
+
   if (!coin) throw new Error("Cell is not found");
+
   const amount = Big(coin.amount).gt(MAX_CELL_TO_LOCK)
     ? randomInt(10, MAX_CELL_TO_LOCK)
     : coin.amount;
@@ -51,46 +52,28 @@ const submitTx = async (
   /** @type {AptosAccount} */ account,
   /** @type {any} */ payload,
 ) => {
-  let retries = TIMES_TO_RETRY_TX;
+  const maxGasAmount = await client.estimateMaxGasAmount(account.address());
+  const options = { max_gas_amount: maxGasAmount.toString() };
 
-  while (retries >= 1) {
-    try {
-      const max_gas_amount = await client.estimateMaxGasAmount(
-        account.address(),
-      );
-      const options = { max_gas_amount: max_gas_amount.toString() };
+  const rawTX = await client.generateTransaction(
+    account.address(),
+    payload,
+    options,
+  );
+  const txHash = await client.signAndSubmitTransaction(account, rawTX);
 
-      const rawTX = await client.generateTransaction(
-        account.address(),
-        payload,
-        options,
-      );
-      const txHash = await client.signAndSubmitTransaction(account, rawTX);
+  /** * @type {any} */
+  const txResult = await client.waitForTransactionWithResult(txHash);
 
-      const txResult = await client.waitForTransactionWithResult(txHash);
-
-      if (!txResult.success) {
-        if (
-          txResult?.vm_status?.includes("ECANNOT_VOTE_TWICE_IN_THE_SAME_EPOCH")
-        ) {
-          logger.info("already voted in this epoch");
-          return "";
-        }
-
-        throw new Error("Transaction failed");
-      }
-
-      return txResult.hash;
-    } catch (error) {
-      logger.error(error.message);
-      console.error(error, payload);
-      await wait(10, 40);
+  if (!txResult.success) {
+    if (txResult?.vm_status?.includes("ECANNOT_VOTE_TWICE_IN_THE_SAME_EPOCH")) {
+      return "already voted in this epoch";
     }
 
-    retries -= 1;
+    throw new Error("Transaction failed");
   }
 
-  throw new Error("retry attempts has been reached");
+  return txResult.hash;
 };
 
 export const swapAptToUsdt = async (/** @type {AptosAccount} */ account) => {
@@ -138,9 +121,7 @@ export const swapAptToCell = async (/** @type {AptosAccount} */ account) => {
 };
 
 export const createLock = async (/** @type {AptosAccount} */ account) => {
-  await wait(10);
-  // const weeksAmount = randomChoice([2, 4, 24, 52, 104]);
-  const weeksAmount = "2";
+  const weeksAmount = String(randomChoice([2, 4, 24, 52, 104]));
   const cellBalance = await getCellBalance(account);
 
   const payload = {
