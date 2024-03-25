@@ -89,6 +89,8 @@ const submitTx = async (
 
     retries -= 1;
   }
+
+  throw new Error("retry attempts has been reached");
 };
 
 export const swapAptToUsdt = async (/** @type {AptosAccount} */ account) => {

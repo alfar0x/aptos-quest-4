@@ -53,7 +53,6 @@ const main = async () => {
 
       const voteHash = await vote(account);
       if (voteHash) logger.info(`vote: ${EXPLORER_URL}/${voteHash}`);
-
       await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
     } catch (error) {
       logger.error(error.message);
