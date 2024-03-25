@@ -35,9 +35,9 @@ const main = async () => {
     logger.info(`starting ${idx} account ${account.address().toString()}`);
 
     try {
-      await wrapper("swap apt -> usdt", swapAptToUsdt, account);
+      await wrapper("swap apt to usdt", swapAptToUsdt, account);
       await wrapper("supply usdt", ariesLendUsdt, account);
-      await wrapper("swap apt -> cell", swapAptToCell, account);
+      await wrapper("swap apt to cell", swapAptToCell, account);
       await wrapper("lock cell", createLock, account);
       await wrapper("vote", vote, account, true);
     } catch (error) {
