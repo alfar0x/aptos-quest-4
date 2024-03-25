@@ -1,17 +1,22 @@
 /* eslint-disable camelcase */
 // eslint-disable-next-line no-unused-vars
-import { AptosAccount, Provider } from "aptos";
-import client from "./client.js";
+import { AptosAccount, AptosClient, Provider } from "aptos";
 import {
   randomChoices,
   randomInt,
   generateRandomIntegersWithSum,
   wait,
-} from "./common.js";
+} from "./helpers.js";
 import { TIMES_TO_RETRY_TX } from "./config.js";
 import logger from "./logger.js";
+import Big from "big.js";
 
+const { RPC_URL } = process.env;
+
+const client = new AptosClient(RPC_URL);
 const provider = new Provider("mainnet");
+
+const MAX_CELL_TO_LOCK = 100000000;
 
 const getCellBalance = async (account) => {
   const coins = await provider.getAccountCoinsData(account.address());
@@ -21,7 +26,11 @@ const getCellBalance = async (account) => {
       "0x2ebb2ccac5e027a87fa0e2e5f656a3a4238d6a48d93ec9b610d570fc0aa0df12",
   );
   if (!coin) throw new Error("Cell is not found");
-  return String(coin.amount);
+  const amount = Big(coin.amount).gt(MAX_CELL_TO_LOCK)
+    ? randomInt(10, MAX_CELL_TO_LOCK)
+    : coin.amount;
+
+  return String(amount);
 };
 
 const getV2TokenID = async (account) => {
@@ -121,7 +130,6 @@ export const createLock = async (/** @type {AptosAccount} */ account) => {
   // const weeksAmount = randomChoice([2, 4, 24, 52, 104]);
   const weeksAmount = "2";
   const cellBalance = await getCellBalance(account);
-  console.log(cellBalance);
 
   const payload = {
     function:
