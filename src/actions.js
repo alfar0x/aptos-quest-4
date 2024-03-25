@@ -1,125 +1,139 @@
+/* eslint-disable camelcase */
 // eslint-disable-next-line no-unused-vars
-import { AptosAccount } from "aptos";
-import Big from "big.js";
-import { addHours, millisecondsToSeconds } from "date-fns";
+import { AptosAccount, Provider } from "aptos";
 import client from "./client.js";
-import tokens from "./tokens.js";
-import { randomChoice, randomChoices, randomInt } from "./common.js";
-import { generateRandomIntegersWithSum } from "./helpers.js";
+import {
+  randomChoices,
+  randomInt,
+  generateRandomIntegersWithSum,
+  wait,
+} from "./common.js";
+import { TIMES_TO_RETRY_TX } from "./config.js";
+import logger from "./logger.js";
+
+const provider = new Provider("mainnet");
+
+const getCellBalance = async (account) => {
+  const coins = await provider.getAccountCoinsData(account.address());
+  const coin = coins.current_fungible_asset_balances.find(
+    (c) =>
+      c.asset_type ===
+      "0x2ebb2ccac5e027a87fa0e2e5f656a3a4238d6a48d93ec9b610d570fc0aa0df12",
+  );
+  if (!coin) throw new Error("Cell is not found");
+  return String(coin.amount);
+};
+
+const getV2TokenID = async (account) => {
+  const tokenData = await provider.getTokenOwnedFromCollectionAddress(
+    account.address(),
+    "0x30e2f18b1f9c447e7dadd7a05966e721ab6512b81ee977cb053edb86cc1b1d65",
+    { tokenStandard: "v2" },
+  );
+
+  if (tokenData.current_token_ownerships_v2.length === 0) {
+    throw Error("Get token ID Error");
+  }
+
+  return tokenData.current_token_ownerships_v2[0].token_data_id;
+};
 
 const submitTx = async (
   /** @type {AptosAccount} */ account,
   /** @type {any} */ payload,
 ) => {
-  const maxGasAmount = await client.estimateMaxGasAmount(account.address());
+  let retries = TIMES_TO_RETRY_TX;
 
-  const expirationSec = millisecondsToSeconds(
-    addHours(new Date(), 1).getTime(),
-  );
+  while (retries >= 1) {
+    try {
+      const max_gas_amount = await client.estimateMaxGasAmount(
+        account.address(),
+      );
+      const options = { max_gas_amount: max_gas_amount.toString() };
 
-  const options = {
-    max_gas_amount: maxGasAmount.toString(),
-    expiration_timestamp_secs: expirationSec.toString(),
-  };
+      const rawTX = await client.generateTransaction(
+        account.address(),
+        payload,
+        options,
+      );
+      const txHash = await client.signAndSubmitTransaction(account, rawTX);
 
-  const rawTX = await client.generateTransaction(
-    account.address().toString(),
-    payload,
-    options,
-  );
+      const txResult = await client.waitForTransactionWithResult(txHash);
 
-  return await client.signAndSubmitTransaction(account, rawTX);
+      if (!txResult.success) throw new Error("Transaction failed");
+
+      return txResult.hash;
+    } catch (error) {
+      logger.error(error.message);
+      console.error(error, payload);
+      await wait(10, 40);
+    }
+
+    retries -= 1;
+  }
 };
 
-export const swapAptToUsdc = async (
-  /** @type {AptosAccount} */ account,
-  /** @type {Big.BigSource} */ aptNormalizedAmount,
-) => {
+export const swapAptToUsdt = async (/** @type {AptosAccount} */ account) => {
   const payload = {
-    function: `0x190d44266241744264b964a37b8f09863167a12d3e70cda39376cfb4e3561e12::scripts_v2::swap`,
-    type_arguments: [
-      tokens.apt.address,
-      tokens.usdc.address,
-      `0x190d44266241744264b964a37b8f09863167a12d3e70cda39376cfb4e3561e12::curves::Uncorrelated`,
-    ],
-    arguments: [aptNormalizedAmount, ""],
-  };
-
-  const hash = await submitTx(account, payload);
-
-  return { hash };
-};
-
-export const ariesLendUsdc = async (
-  /** @type {AptosAccount} */ account,
-  /** @type {Big.BigSource} */ usdcNormalizedAmount,
-) => {
-  const payload = {
-    function: `0x17f1e926a81639e9557f4e4934df93452945ec30bc962e11351db59eb0d78c33::aries::lend`,
-    type_arguments: [tokens.usdc.address],
-    arguments: [Big(usdcNormalizedAmount).toString()],
-  };
-
-  const hash = await submitTx(account, payload);
-
-  return { hash };
-};
-
-export const swapAptToCell = async (
-  /** @type {AptosAccount} */ account,
-  /** @type {Big.BigSource} */ aptNormalizedAmount,
-) => {
-  const minAmountOutPayload = {
     function:
-      "0x4bf51972879e3b95c4781a5cdcb9e1ee24ef483e7d22f2d903626f126df62bd1::router::get_amounts_out",
-    type_arguments: [],
-    arguments: [
-      Big(aptNormalizedAmount).toString(),
-      "0xedc2704f2cef417a06d1756a04a16a9fa6faaed13af469be9cdfcac5a21a8e2e",
-      ["0x2ebb2ccac5e027a87fa0e2e5f656a3a4238d6a48d93ec9b610d570fc0aa0df12"],
-      [false],
+      "0xc7efb4076dbe143cbcd98cfaaa929ecfc8f299203dfff63b95ccb6bfe19850fa::router::swap_exact_input",
+    type_arguments: [
+      "0x1::aptos_coin::AptosCoin",
+      "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDT",
     ],
+    arguments: ["100000", "10000"],
   };
 
-  const minAmountOutView = await client.view(minAmountOutPayload);
+  return await submitTx(account, payload);
+};
 
+export const ariesLendUsdt = async (/** @type {AptosAccount} */ account) => {
+  const payload = {
+    function:
+      "0x17f1e926a81639e9557f4e4934df93452945ec30bc962e11351db59eb0d78c33::aries::lend",
+    type_arguments: [
+      "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDT",
+    ],
+    arguments: ["10000"],
+  };
+
+  return await submitTx(account, payload);
+};
+
+export const swapAptToCell = async (/** @type {AptosAccount} */ account) => {
   const payload = {
     function:
       "0x4bf51972879e3b95c4781a5cdcb9e1ee24ef483e7d22f2d903626f126df62bd1::router::swap_route_entry_from_coin",
     type_arguments: ["0x1::aptos_coin::AptosCoin"],
     arguments: [
-      Big(aptNormalizedAmount).toString(),
-      minAmountOutView[0],
+      "100000",
+      "0",
       ["0x2ebb2ccac5e027a87fa0e2e5f656a3a4238d6a48d93ec9b610d570fc0aa0df12"],
-      [false],
-      account.address().toString(),
+      ["false"],
+      account.address().hex(),
     ],
   };
 
-  const hash = await submitTx(account, payload);
-
-  return { hash, cellNormalizedAmount: minAmountOutView[0].toString() };
+  return await submitTx(account, payload);
 };
 
-export const createLock = async (
-  /** @type {AptosAccount} */ account,
-  /** @type {Big.BigSource} */ cellNormalizedAmount,
-) => {
-  const weeksAmount = randomChoice([2, 4, 24, 52, 104]);
+export const createLock = async (/** @type {AptosAccount} */ account) => {
+  // const weeksAmount = randomChoice([2, 4, 24, 52, 104]);
+  const weeksAmount = "2";
+  const cellBalance = await getCellBalance(account);
+  console.log(cellBalance);
 
   const payload = {
     function:
       "0x4bf51972879e3b95c4781a5cdcb9e1ee24ef483e7d22f2d903626f126df62bd1::voting_escrow::create_lock_entry",
     type_arguments: [],
-    arguments: [Big(cellNormalizedAmount).toString(), weeksAmount.toString()],
+    arguments: [cellBalance, String(weeksAmount)],
   };
 
-  const hash = await submitTx(account, payload);
-
-  return { hash };
+  return await submitTx(account, payload);
 };
 
-export const vote = async (/** @type {any} */ account) => {
+export const vote = async (/** @type {AptosAccount} */ account) => {
   const votesCount = randomInt(1, 3);
 
   const voteOptions = randomChoices(
@@ -139,18 +153,14 @@ export const vote = async (/** @type {any} */ account) => {
 
   const percents = generateRandomIntegersWithSum(votesCount, 100).map(String);
 
+  const tokenId = await getV2TokenID(account);
+
   const payload = {
     function:
       "0x4bf51972879e3b95c4781a5cdcb9e1ee24ef483e7d22f2d903626f126df62bd1::vote_manager::vote",
     type_arguments: [],
-    arguments: [
-      "0xc727728a38149e26c9f0ca6b2301af7aa8cb82c2ddb7fc455b33dac114a05927",
-      voteOptions,
-      percents,
-    ],
+    arguments: [tokenId, voteOptions, percents],
   };
 
-  const hash = await submitTx(account, payload);
-
-  return { hash };
+  return await submitTx(account, payload);
 };

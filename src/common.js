@@ -115,3 +115,24 @@ export const wait = async (
   }
   await new Promise((resolve) => setTimeout(resolve, Math.round(sec * 1000)));
 };
+
+export const generateRandomIntegersWithSum = (
+  /** @type {number} */ count,
+  /** @type {number} */ sum,
+) => {
+  if (count <= 0) throw new Error("count must be positive");
+  if (sum < 0) throw new Error("sum must be positive");
+
+  const result = [];
+  let innerSum = sum;
+
+  for (let i = 0; i < count - 1; i++) {
+    const rnd = Math.floor(Math.random() * (innerSum - 1)) + 1;
+    result.push(rnd);
+    innerSum -= rnd;
+  }
+
+  result.push(innerSum);
+
+  return result;
+};
