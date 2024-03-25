@@ -73,7 +73,7 @@ const submitTx = async (
         if (
           txResult?.vm_status?.includes("ECANNOT_VOTE_TWICE_IN_THE_SAME_EPOCH")
         ) {
-          logger.warn("already voted in this epoch");
+          logger.info("already voted in this epoch");
           return "";
         }
 

@@ -35,24 +35,25 @@ const main = async () => {
 
     try {
       const swapAptToUsdtHash = await swapAptToUsdt(account);
-      await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
       logger.info(`swap apt to usdt: ${EXPLORER_URL}/${swapAptToUsdtHash}`);
+      await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
 
       const ariesLendUsdtHash = await ariesLendUsdt(account);
-      await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
       logger.info(`supply usdt: ${EXPLORER_URL}/${ariesLendUsdtHash}`);
+      await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
 
       const swapAptToCellHash = await swapAptToCell(account);
-      await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
       logger.info(`swap apt to cell: ${EXPLORER_URL}/${swapAptToCellHash}`);
+      await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
 
       const createLockHash = await createLock(account);
-      await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
       logger.info(`create lock: ${EXPLORER_URL}/${createLockHash}`);
+      await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
 
       const voteHash = await vote(account);
+      if (voteHash) logger.info(`vote: ${EXPLORER_URL}/${voteHash}`);
+
       await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
-      logger.info(`vote: ${EXPLORER_URL}/${voteHash}`);
     } catch (error) {
       logger.error(error.message);
     }
