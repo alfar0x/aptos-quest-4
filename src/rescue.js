@@ -27,30 +27,35 @@ const tokens = [
     decimals: 6,
     address:
       "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDC",
+    minSwap: 0.1,
   },
   {
     symbol: "lzUSDT",
     decimals: 6,
     address:
       "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::USDT",
+    minSwap: 0.1,
   },
   {
     symbol: "lzWETH",
     decimals: 6,
     address:
       "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa::asset::WETH",
+    minSwap: 0.00003,
   },
   {
     symbol: "stAPT",
     decimals: 8,
     address:
       "0xd11107bdf0d6d7040c6c0bfbdecb6545191fdf13e8d8d259952f53e1713f61b5::staked_coin::StakedAptos",
+    minSwap: 0.007,
   },
   {
     symbol: "tAPT",
     decimals: 8,
     address:
       "0x84d7aeef42d38a5ffc3ccef853e1b82e4958659d16a7de736a29c55fbbeb0114::staked_aptos_coin::StakedAptosCoin",
+    minSwap: 0.007,
   },
 ];
 
@@ -76,10 +81,8 @@ const main = async () => {
             resources,
             token.address,
           );
-          if (!balance || balance === "0") continue;
-          const readable = Big(balance)
-            .div(Big(10).pow(token.decimals))
-            .toString();
+          const readable = Big(balance).div(Big(10).pow(token.decimals));
+          if (readable.lt(token.minSwap)) continue;
           logger.info(`found ${readable} ${token.symbol}`);
           const hash = await swapTokenToApt(account, token.address, balance);
           logger.info(`${EXPLORER_URL}/${hash}`);
