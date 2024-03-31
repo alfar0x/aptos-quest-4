@@ -52,13 +52,13 @@ export const submitTx = async (
   /** @type {AptosAccount} */ account,
   /** @type {any} */ payload,
 ) => {
-  const maxGasAmount = await client.estimateMaxGasAmount(account.address());
-  const options = { max_gas_amount: maxGasAmount.toString() };
+  // const maxGasAmount = await client.estimateMaxGasAmount(account.address());
+  // const options = { max_gas_amount: maxGasAmount.toString() };
 
   const rawTX = await client.generateTransaction(
     account.address(),
     payload,
-    options,
+    // options,
   );
   const txHash = await client.signAndSubmitTransaction(account, rawTX);
 
