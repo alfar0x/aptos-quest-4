@@ -16,7 +16,7 @@ const provider = new Provider("mainnet");
 
 const MAX_CELL_TO_LOCK = 100000000;
 
-const getCellBalance = async (account) => {
+const getCellBalance = async (/** @type {AptosAccount} */ account) => {
   const coins = await provider.getAccountCoinsData(account.address());
 
   const coin = coins.current_fungible_asset_balances.find(
@@ -34,7 +34,7 @@ const getCellBalance = async (account) => {
   return String(amount);
 };
 
-const getV2TokenID = async (account) => {
+const getV2TokenID = async (/** @type {AptosAccount} */ account) => {
   const tokenData = await provider.getTokenOwnedFromCollectionAddress(
     account.address(),
     "0x30e2f18b1f9c447e7dadd7a05966e721ab6512b81ee977cb053edb86cc1b1d65",
@@ -48,7 +48,7 @@ const getV2TokenID = async (account) => {
   return tokenData.current_token_ownerships_v2[0].token_data_id;
 };
 
-const submitTx = async (
+export const submitTx = async (
   /** @type {AptosAccount} */ account,
   /** @type {any} */ payload,
 ) => {
@@ -161,6 +161,31 @@ export const vote = async (/** @type {AptosAccount} */ account) => {
       "0x4bf51972879e3b95c4781a5cdcb9e1ee24ef483e7d22f2d903626f126df62bd1::vote_manager::vote",
     type_arguments: [],
     arguments: [tokenId, voteOptions, percents],
+  };
+
+  return await submitTx(account, payload);
+};
+
+export const getAccountResources = async (
+  /** @type {AptosAccount} */ account,
+) => {
+  return await client.getAccountResources(account.address());
+};
+
+export const swapTokenToApt = async (
+  /** @type {AptosAccount} */ account,
+  /** @type {string} */ address,
+  /** @type {string|number} */ amount,
+) => {
+  const payload = {
+    function:
+      "0x190d44266241744264b964a37b8f09863167a12d3e70cda39376cfb4e3561e12::scripts_v2::swap",
+    type_arguments: [
+      address,
+      "0x1::aptos_coin::AptosCoin",
+      `0x190d44266241744264b964a37b8f09863167a12d3e70cda39376cfb4e3561e12::curves::Uncorrelated`,
+    ],
+    arguments: [String(amount), ""],
   };
 
   return await submitTx(account, payload);

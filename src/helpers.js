@@ -171,3 +171,11 @@ export const wrapper = async (name, action, account, disableSleep) => {
 
   throw new Error("retry attempts has been reached");
 };
+
+export const getTokenBalancesFromResources = (resources, address) => {
+  const resource = resources.find(
+    (r) => r?.type === "0x1::coin::CoinStore<" + address + ">",
+  );
+
+  return resource?.data?.coin?.value || 0;
+};
