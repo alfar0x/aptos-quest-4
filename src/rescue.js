@@ -6,18 +6,15 @@ import {
   getTokenBalancesFromResources,
   readByLine,
   wait,
-  wrapper,
 } from "./helpers.js";
-import { MIN_ACC_SLEEP_SEC, MAX_ACC_SLEEP_SEC } from "./config.js";
 import {
-  swapAptToUsdt,
-  ariesLendUsdt,
-  swapAptToCell,
-  createLock,
-  vote,
-  getAccountResources,
-  swapTokenToApt,
-} from "./actions.js";
+  MIN_ACC_SLEEP_SEC,
+  MAX_ACC_SLEEP_SEC,
+  MIN_TX_SLEEP_SEC,
+  MAX_TX_SLEEP_SEC,
+  EXPLORER_URL,
+} from "./config.js";
+import { getAccountResources, swapTokenToApt } from "./actions.js";
 import logger from "./logger.js";
 import Big from "big.js";
 
@@ -84,11 +81,12 @@ const main = async () => {
             .div(Big(10).pow(token.decimals))
             .toString();
           logger.info(`found ${readable} ${token.symbol}`);
-          await swapTokenToApt(account, token.address, balance);
+          const hash = await swapTokenToApt(account, token.address, balance);
+          logger.info(`${EXPLORER_URL}/${hash}`);
         } catch (error) {
           logger.error(error.message);
         }
-        await wait(10, 30);
+        await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
       }
     } catch (error) {
       logger.error(error.message);
