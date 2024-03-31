@@ -76,7 +76,7 @@ const main = async () => {
             resources,
             token.address,
           );
-          if (!balance) continue;
+          if (!balance || balance === "0") continue;
           const readable = Big(balance)
             .div(Big(10).pow(token.decimals))
             .toString();
