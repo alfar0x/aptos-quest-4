@@ -19,7 +19,6 @@ import logger from "./logger.js";
 import Big from "big.js";
 
 const FILE_PRIVATE_KEYS = "input/privateKeys.txt";
-const FILE_FAILED_KEYS = "input/failed.txt";
 
 const tokens = [
   {
@@ -60,7 +59,7 @@ const tokens = [
 ];
 
 const main = async () => {
-  createFiles([FILE_PRIVATE_KEYS, FILE_FAILED_KEYS]);
+  createFiles([FILE_PRIVATE_KEYS]);
   const privateKeys = readByLine(FILE_PRIVATE_KEYS).map((p) => p.trim());
 
   logger.info(`found ${privateKeys.length} private keys`);
@@ -76,24 +75,17 @@ const main = async () => {
     try {
       const resources = await getAccountResources(account);
       for (const token of tokens) {
-        try {
-          const balance = getTokenBalancesFromResources(
-            resources,
-            token.address,
-          );
-          const readable = Big(balance).div(Big(10).pow(token.decimals));
-          if (readable.lt(token.minSwap)) continue;
-          logger.info(`found ${readable} ${token.symbol}`);
-          const hash = await swapTokenToApt(account, token.address, balance);
-          logger.info(`${EXPLORER_URL}/${hash}`);
-        } catch (error) {
-          logger.error(error.message);
-        }
+        const balance = getTokenBalancesFromResources(resources, token.address);
+        const readable = Big(balance).div(Big(10).pow(token.decimals));
+        if (readable.lt(token.minSwap)) continue;
+        const hash = await swapTokenToApt(account, token.address, balance);
+        logger.info(
+          `swap ${readable} ${token.symbol}: ${EXPLORER_URL}/${hash}`,
+        );
         await wait(MIN_TX_SLEEP_SEC, MAX_TX_SLEEP_SEC);
       }
     } catch (error) {
       logger.error(error.message);
-      appendFile(FILE_FAILED_KEYS, `${privateKey}\n`);
     }
 
     if (idx < privateKeys.length) {
