@@ -5,7 +5,8 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "start": "node ./src/index.js"
+    "start": "node ./src/index.js",
+    "rescue": "node ./src/rescue.js"
   },
   "devDependencies": {
     "@types/big.js": "^6.1.6",

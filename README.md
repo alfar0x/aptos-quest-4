@@ -17,8 +17,12 @@ Script will make [aptos quest 4](https://galxe.com/aptos/campaign/GCm4Ct4fp8) tr
 1. Fill `src/config.js` file
 1. Run `npm run start`
 
+# Rescue mode
+Side mode to sell all tokens from aptos-simulator (lzUSDC,lzUSDT,lzWETH,stAPT,tAPT) to APT token. To run `npm run rescue`
+
 Thanks [humansimulacrum](https://github.com/humansimulacrum/aptos-simulator) for code examples
 
 Discover more scripts on our [Telegram channel](https://t.me/+FozX3VZA0RIyNWY6)
 
 :star2: Виносимо проекти в [телеграм каналі](https://t.me/+FozX3VZA0RIyNWY6)
+
